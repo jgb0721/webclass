@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<!-- 주석, css애니메이션은 gpt 사용함 -->
+<head>
+    <style>
+        /* 모든 요소의 텍스트를 가운데 정렬 */
+        * {
+            text-align: center;
+        }
+
+        /* 게임 보드 중앙 정렬 */
+        #board {
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* 게임 보드의 각 셀에 대한 스타일 지정 */
+        #board tr td {
+            border: 1px solid white; /* 셀 테두리 흰색 */
+            background: #34da79; /* 기본 배경색(녹색) */
+            width: 40px; /* 셀 너비 */
+            height: 40px; /* 셀 높이 */
+            text-align: center; /* 텍스트 가운데 정렬 */
+            transition: transform 0.5s, background 0.5s; /* 0.5초 동안 배경색과 회전 애니메이션 적용 */
+            transform-style: preserve-3d; /* 3D 회전 효과를 유지하기 위한 설정 */
+        }
+
+        /* 셀이 클릭되었을 때(지뢰가 아닌 경우) */
+        #board tr td.clicked {
+            background: #6c5ee7; /* 클릭된 셀의 배경색(파란색) */
+            transform: rotateY(180deg); /* Y축을 기준으로 셀을 180도 회전 */
+        }
+
+        /* 셀이 지뢰인 경우 */
+        #board tr td.mine {
+            background: #FF0000; /* 지뢰일 때의 배경색(빨간색) */
+            transform: rotateY(180deg); /* Y축을 기준으로 셀을 180도 회전 */
+        }
+    </style>
+</head>
+
+<body>
+    <h1>지뢰찾기</h1>
+    <!-- 게임 보드를 그릴 테이블 요소 -->
+    <table id="board"></table>
+    <!-- 새로운 게임을 시작하는 버튼 -->
+    <button onclick="genGrid();">새로운 게임</button>
+    <!-- 정답 확인 버튼, 게임 종료 후 활성화됨 -->
+    <button id="checkAnswerBtn" onclick="checkAnswer();" disabled>정답 확인</button>
+
+    <script>
+        /* 전역 변수 선언 */
+        let grid = document.getElementById("board"); // 게임 보드 테이블
+        let checkAnswerBtn = document.getElementById("checkAnswerBtn"); // 정답 확인 버튼
+        let gameOver = false; // 게임 종료 여부 확인
+
+        /* 초기 게임 보드 생성 함수 호출 */
+        genGrid();
+
+        /* 게임 보드를 생성하는 함수 */
+        function genGrid() {
+            grid.innerHTML = ""; // 기존 보드 지우기
+            checkAnswerBtn.disabled = true; // 게임 시작 시 정답 확인 버튼 비활성화
+            gameOver = false; // 게임 종료 상태 초기화
+
+            /* 8x8 크기의 보드 생성 */
+            for (let i = 0; i < 8; i++) {
+                let row = grid.insertRow(i); // 새로운 행 추가
+                for (let j = 0; j < 8; j++) {
+                    let cell = row.insertCell(j); // 새로운 셀 추가
+                    cell.onclick = function () { clickBox(this); }; // 셀 클릭 시 실행될 함수 지정
+                    let mine = document.createAttribute("mine"); // 셀에 지뢰 여부를 나타내는 속성 추가
+                    if (Math.random() < 0.3) // 30% 확률로 지뢰 배치
+                        mine.value = "true"; // 지뢰일 경우 "true"로 설정
+                    else
+                        mine.value = "false"; // 지뢰가 아닐 경우 "false"로 설정
+                    cell.setAttributeNode(mine); // 셀에 지뢰 여부 속성 부여
+                }
+            }
+        }
+
+        /* 셀이 클릭되었을 때 호출되는 함수 */
+        function clickBox(cell) {
+            if (gameOver) return; // 게임이 종료되면 클릭이 무효화됨
+
+            if (cell.getAttribute("mine") == "true") { // 클릭된 셀이 지뢰일 경우
+                cell.className = "mine"; // 셀의 클래스를 "mine"으로 설정하여 빨간색으로 표시
+                alert("게임이 종료되었습니다."); // 게임 종료 알림
+                gameOver = true; // 게임 종료 상태로 변경
+                checkAnswerBtn.disabled = false; // 정답 확인 버튼 활성화
+            } else { // 클릭된 셀이 지뢰가 아닐 경우
+                cell.className = "clicked"; // 셀의 클래스를 "clicked"로 설정하여 파란색으로 변경
+            }
+        }
+
+        /* 정답 확인 버튼 클릭 시 호출되는 함수 */
+        function checkAnswer() {
+            let delay = 25; // 각 셀이 뒤집힐 때의 지연 시간(25ms)
+            
+            /* 이중 반복문을 통해 모든 셀을 순차적으로 검사 */
+            for (let i = 0; i < grid.rows.length; i++) {
+                for (let j = 0; j < grid.rows[i].cells.length; j++) {
+                    let cell = grid.rows[i].cells[j]; // 각 셀에 대한 참조
+                    setTimeout(function () { // 각 셀에 대해 지연 실행
+                        if (cell.getAttribute("mine") == "true") { // 셀이 지뢰일 경우
+                            cell.className = "mine"; // 셀을 빨간색으로 표시
+                        } else { // 셀이 지뢰가 아닐 경우
+                            cell.className = "clicked"; // 셀을 파란색으로 표시
+                        }
+                    }, (i * grid.rows[i].cells.length + j) * delay); // 각 셀이 차례대로 뒤집히도록 딜레이 설정
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
